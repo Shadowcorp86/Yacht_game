@@ -1,0 +1,25 @@
+{
+  "name": "Yacht - Kockajáték",
+  "short_name": "Yacht",
+  "description": "Klasszikus Yacht kockajáték, 1-4 játékos, online multiplayer móddal.",
+  "start_url": "/Yacht_game/index.html",
+  "scope": "/Yacht_game/",
+  "display": "standalone",
+  "background_color": "#f4ecd8",
+  "theme_color": "#9c7a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
