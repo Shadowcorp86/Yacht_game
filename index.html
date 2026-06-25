@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yacht – Kockajáték</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@400;700&display=swap');
+
+  :root{
+    --paper:#f4ecd8;
+    --paper-dark:#e8dcc0;
+    --ink:#2b2620;
+    --ink-light:#5b5446;
+    --red:#a13d3d;
+    --blue:#2f4d63;
+    --line:#c9bb98;
+    --gold:#9c7a2e;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--line) 28px),
+      var(--paper);
+    background-attachment:local;
+    font-family:'Kalam', cursive;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:18px 10px 60px;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    top:0; left:40px; bottom:0;
+    width:2px;
+    background:var(--red);
+    opacity:0.35;
+    z-index:0;
+  }
+
+  h1{
+    font-family:'Caveat', cursive;
+    font-weight:700;
+    font-size:2.6rem;
+    margin:4px 0 0;
+    color:var(--ink);
+    transform:rotate(-1deg);
+    position:relative;
+    z-index:1;
+  }
+  h1 .anchor{ font-size:1.6rem; }
+
+  .subtitle{
+    font-size:0.95rem;
+    color:var(--ink-light);
+    margin:0 0 14px;
+    font-style:italic;
+  }
+
+  .scoreboard{
+    display:flex;
+    gap:14px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .player-card{
+    background:var(--paper-dark);
+    border:2px solid var(--ink);
+    border-radius:6px;
+    padding:8px 16px;
+    text-align:center;
+    transform:rotate(-0.4deg);
+    box-shadow:2px 2px 0 rgba(0,0,0,0.15);
+    min-width:120px;
+    position:relative;
+  }
+  .player-card.active{
+    border-color:var(--red);
+    box-shadow:2px 2px 0 var(--red);
+  }
+  .player-card .name{
+    font-weight:700;
+    font-size:1.1rem;
+  }
+  .player-card .total{
+    font-family:'Caveat', cursive;
+    font-size:1.8rem;
+    color:var(--blue);
+  }
+  .turn-flag{
+    position:absolute;
+    top:-10px;
+    right:-10px;
+    background:var(--red);
+    color:var(--paper);
+    font-size:0.7rem;
+    padding:2px 7px;
+    border-radius:3px;
+    transform:rotate(8deg);
+    font-family:'Kalam',cursive;
+  }
+
+  .dice-area{
+    display:flex;
+    gap:14px;
+    margin:8px 0 6px;
+    flex-wrap:wrap;
+    justify-content:center;
+    position:relative;
+    z-index:1;
+  }
+
+  .die{
+    width:62px;
+    height:62px;
+    background:var(--paper);
+    border:2.5px solid var(--ink);
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    position:relative;
+    box-shadow:1px 1px 0 rgba(0,0,0,0.2);
+    transition:transform .12s ease;
+    user-select:none;
+  }
+  .die.rolling{ animation: shake .12s linear infinite; }
+  @keyframes shake{
+    0%{ transform:rotate(0deg);}
+    25%{ transform:rotate(-8deg);}
+    75%{ transform:rotate(8deg);}
+    100%{ transform:rotate(0deg);}
+  }
+  .die.held{
+    border-color:var(--red);
+    background:#efe2c0;
+    transform:translateY(-6px) rotate(-2deg);
+  }
+  .die.held::after{
+    content:"tartva";
+    position:absolute;
+    bottom:-20px;
+    left:50%;
+    transform:translateX(-50%) rotate(-2deg);
+    font-size:0.65rem;
+    color:var(--red);
+    white-space:nowrap;
+  }
+  .pip-grid{
+    width:42px;
+    height:42px;
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    grid-template-rows:1fr 1fr 1fr;
+    padding:3px;
+  }
+  .pip{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:var(--ink);
+    margin:auto;
+    opacity:0;
+  }
+  .pip.on{ opacity:1; }
+
+  .controls{
+    display:flex;
+    gap:12px;
+    margin:14px 0;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  button{
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size:1.05rem;
+    padding:10px 22px;
+    border:2.5px solid var(--ink);
+    border-radius:8px;
+    background:var(--gold);
+    color:var(--paper);
+    cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  button:active{
+    transform:translate(2px,2px);
+    box-shadow:0 0 0 var(--ink);
+  }
+  button:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+  button.secondary{
+    background:var(--paper-dark);
+    color:var(--ink);
+  }
+
+  .rolls-left{
+    font-size:0.95rem;
+    color:var(--ink-light);
+    margin:0 0 10px;
+  }
+  .rolls-left b{ color:var(--red); }
+
+  table.score{
+    border-collapse:collapse;
+    background:var(--paper);
+    border:2.5px solid var(--ink);
+    margin-top:10px;
+    box-shadow:3px 3px 0 rgba(0,0,0,0.15);
+    transform:rotate(-0.2deg);
+    max-width:96vw;
+  }
+  table.score th, table.score td{
+    border:1.5px solid var(--ink);
+    padding:7px 10px;
+    text-align:center;
+    font-size:0.95rem;
+  }
+  table.score thead th{
+    font-family:'Caveat', cursive;
+    font-size:1.3rem;
+    background:var(--paper-dark);
+  }
+  table.score td.label{
+    text-align:left;
+    font-weight:700;
+    background:var(--paper-dark);
+    white-space:nowrap;
+  }
+  table.score td.section-sub{
+    background:#e2d4ac;
+    font-style:italic;
+    font-size:0.85rem;
+  }
+  td.cell{
+    cursor:pointer;
+    min-width:54px;
+    color:var(--ink-light);
+  }
+  td.cell.filled{
+    cursor:default;
+    color:var(--ink);
+    font-weight:700;
+  }
+  td.cell.selectable:hover{
+    background:#d7e8d4;
+    color:var(--ink);
+  }
+  td.cell.yacht-cell.filled{
+    color:var(--red);
+  }
+
+  .msg{
+    min-height:1.3rem;
+    font-size:1rem;
+    color:var(--blue);
+    margin:6px 0;
+    text-align:center;
+    font-weight:700;
+  }
+
+  .winner-banner{
+    font-family:'Caveat', cursive;
+    font-size:2.2rem;
+    color:var(--red);
+    transform:rotate(-2deg);
+    margin:10px 0;
+    text-align:center;
+  }
+
+  footer{
+    margin-top:24px;
+    font-size:0.75rem;
+    color:var(--ink-light);
+    opacity:0.7;
+  }
+
+  @media (max-width:480px){
+    .die{ width:50px; height:50px; }
+    .pip-grid{ width:34px; height:34px; }
+    table.score th, table.score td{ padding:5px 6px; font-size:0.82rem; }
+    h1{ font-size:2.1rem; }
+  }
+
+  .setup-screen{
+    background:var(--paper-dark);
+    border:2.5px solid var(--ink);
+    border-radius:10px;
+    padding:24px 28px;
+    box-shadow:3px 3px 0 rgba(0,0,0,0.15);
+    transform:rotate(-0.3deg);
+    max-width:420px;
+    width:100%;
+    text-align:center;
+  }
+  .setup-label{
+    font-weight:700;
+    font-size:1.1rem;
+    margin:0 0 10px;
+  }
+  .player-count-row{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+  }
+  .count-btn{
+    width:54px;
+    height:54px;
+    border-radius:50%;
+    border:2.5px solid var(--ink);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Caveat', cursive;
+    font-size:1.6rem;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:2px 2px 0 rgba(0,0,0,0.15);
+  }
+  .count-btn.selected{
+    background:var(--red);
+    color:var(--paper);
+    border-color:var(--red);
+    transform:scale(1.08);
+  }
+  .name-inputs{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:6px;
+  }
+  .name-inputs input{
+    font-family:'Kalam', cursive;
+    font-size:1rem;
+    padding:7px 10px;
+    border:2px solid var(--ink);
+    border-radius:6px;
+    background:var(--paper);
+    color:var(--ink);
+    text-align:center;
+  }
+  .name-inputs input:focus{
+    outline:none;
+    border-color:var(--red);
+  }
+  .room-choice-row{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+  }
+  .room-choice-row button{
+    width:100%;
+    max-width:280px;
+  }
+  .waiting-note{
+    font-size:0.85rem;
+    color:var(--ink-light);
+    font-style:italic;
+    margin-top:10px;
+  }
+  .you-flag{
+    position:absolute;
+    top:-10px;
+    left:-10px;
+    background:var(--blue);
+    color:var(--paper);
+    font-size:0.65rem;
+    padding:2px 6px;
+    border-radius:3px;
+    transform:rotate(-8deg);
+    font-family:'Kalam',cursive;
+  }
+  .room-code-banner{
+    font-family:'Caveat', cursive;
+    font-size:1.6rem;
+    color:var(--blue);
+    margin:0 0 12px;
+  }
+</style>
+</head>
+<body>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getDatabase, ref, set, update, onValue, get, runTransaction, onDisconnect
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBvCH-FKtyVErL5lQMjexC74jlgxjd7WbU",
+    authDomain: "familyyacht-73cdd.firebaseapp.com",
+    databaseURL: "https://familyyacht-73cdd-default-rtdb.europe-west1.firebasedatabase.app/",
+    projectId: "familyyacht-73cdd",
+    storageBucket: "familyyacht-73cdd.firebasestorage.app",
+    messagingSenderId: "571740238823",
+    appId: "1:571740238823:web:703a52f5427b86011b0342"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Expose what the rest of the (non-module) page script needs
+  window.__fb = { db, ref, set, update, onValue, get, runTransaction, onDisconnect };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<h1><span class="anchor">⚓</span> Yacht <span class="anchor">⚓</span></h1>
+<p class="subtitle" id="subtitle">— klasszikus kockajáték —</p>
+
+<div id="roomScreen" class="setup-screen">
+  <p class="setup-label">Hogyan szeretnél játszani?</p>
+  <div class="room-choice-row">
+    <button id="createRoomBtn">🆕 Szoba létrehozása</button>
+    <button id="joinRoomBtn" class="secondary">🔑 Csatlakozás kóddal</button>
+  </div>
+
+  <div id="joinForm" style="display:none; margin-top:16px;">
+    <input id="roomCodeInput" type="text" maxlength="4" placeholder="Pl. 4821" inputmode="numeric" style="font-size:1.4rem; text-align:center; letter-spacing:4px; width:140px;">
+    <br>
+    <button id="confirmJoinBtn" style="margin-top:12px;">Csatlakozás</button>
+  </div>
+
+  <div id="roomStatus" class="msg" style="margin-top:14px;"></div>
+</div>
+
+<div id="setupScreen" class="setup-screen" style="display:none;">
+  <p class="setup-label" id="roomCodeDisplay"></p>
+  <div id="hostNameSetup">
+    <p class="setup-label">Hány játékos lesz?</p>
+    <div class="player-count-row" id="playerCountRow"></div>
+    <p class="setup-label" style="margin-top:18px;">Játékosok nevei</p>
+    <div class="name-inputs" id="nameInputs"></div>
+    <button id="startGameBtn" style="margin-top:20px;">▶ Tovább a helyek kiválasztásához</button>
+  </div>
+  <div id="seatPicker" style="display:none;">
+    <p class="setup-label">Melyik játékos vagy ezen a telefonon?</p>
+    <div class="player-count-row" id="seatPickerRow"></div>
+    <button id="launchGameBtn" class="secondary" style="margin-top:18px; display:none;">▶ Mindenki készen áll — Játék indítása</button>
+  </div>
+  <p class="waiting-note" id="waitingNote"></p>
+</div>
+
+<div id="gameScreen" class="game-screen" style="display:none;">
+  <div class="scoreboard" id="scoreboard"></div>
+
+  <div class="dice-area" id="diceArea"></div>
+  <p class="rolls-left" id="rollsLeft"></p>
+
+  <div class="controls">
+    <button id="rollBtn">🎲 Dobás</button>
+    <button id="newGameBtn" class="secondary">⚙ Új játék / beállítások</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+  <div id="winnerBanner"></div>
+
+  <div id="tableWrap"></div>
+
+  <footer>Tipp: kattints egy kockára, hogy "tartsd" — a tartott kockákat nem dobod újra.</footer>
+</div>
+
+<script>
+(function(){
+  const CATS = [
+    {key:'aces', label:'Ászok', section:'upper', desc:'1-esek összege'},
+    {key:'twos', label:'Kettesek', section:'upper', desc:'2-esek összege'},
+    {key:'threes', label:'Hármasok', section:'upper', desc:'3-asok összege'},
+    {key:'fours', label:'Négyesek', section:'upper', desc:'4-esek összege'},
+    {key:'fives', label:'Ötösök', section:'upper', desc:'5-ösök összege'},
+    {key:'sixes', label:'Hatosok', section:'upper', desc:'6-osok összege'},
+    {key:'choice', label:'Choice', section:'lower', desc:'Összes kocka összege'},
+    {key:'fourkind', label:'4 egyező', section:'lower', desc:'4 egyforma összege'},
+    {key:'fullhouse', label:'Full House', section:'lower', desc:'25 pont'},
+    {key:'smallstraight', label:'Kis sor', section:'lower', desc:'30 pont'},
+    {key:'largestraight', label:'Nagy sor', section:'lower', desc:'40 pont'},
+    {key:'yacht', label:'Yacht', section:'lower', desc:'50 pont'},
+  ];
+
+  const PIP_PATTERNS = {
+    1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]
+  };
+
+  // ---------- Local-only state ----------
+  let roomCode = null;
+  let mySeat = null;          // index of "me" in players array
+  let isHost = false;
+  let playerCount = 2;        // used only on the setup screen before game starts
+  let fb = null;              // firebase helpers, set once ready
+  let roomRef = null;
+  let unsubscribe = null;
+  let latestState = null;     // mirror of the Firebase room state
+
+  // ---------- DOM refs ----------
+  const roomScreen = document.getElementById('roomScreen');
+  const setupScreen = document.getElementById('setupScreen');
+  const gameScreen = document.getElementById('gameScreen');
+
+  const createRoomBtn = document.getElementById('createRoomBtn');
+  const joinRoomBtn = document.getElementById('joinRoomBtn');
+  const joinForm = document.getElementById('joinForm');
+  const roomCodeInput = document.getElementById('roomCodeInput');
+  const confirmJoinBtn = document.getElementById('confirmJoinBtn');
+  const roomStatus = document.getElementById('roomStatus');
+
+  const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+  const hostNameSetup = document.getElementById('hostNameSetup');
+  const playerCountRow = document.getElementById('playerCountRow');
+  const nameInputs = document.getElementById('nameInputs');
+  const startGameBtn = document.getElementById('startGameBtn');
+  const seatPicker = document.getElementById('seatPicker');
+  const seatPickerRow = document.getElementById('seatPickerRow');
+  const launchGameBtn = document.getElementById('launchGameBtn');
+  const waitingNote = document.getElementById('waitingNote');
+  const subtitleEl = document.getElementById('subtitle');
+
+  const diceArea = document.getElementById('diceArea');
+  const rollBtn = document.getElementById('rollBtn');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const rollsLeftEl = document.getElementById('rollsLeft');
+  const msgEl = document.getElementById('msg');
+  const scoreboardEl = document.getElementById('scoreboard');
+  const tableWrap = document.getElementById('tableWrap');
+  const winnerBanner = document.getElementById('winnerBanner');
+
+  // ---------- Firebase bootstrap ----------
+  function whenFirebaseReady(cb){
+    if(window.__fb){ cb(); return; }
+    window.addEventListener('firebase-ready', cb, {once:true});
+  }
+
+  function generateRoomCode(){
+    return String(Math.floor(1000 + Math.random()*9000));
+  }
+
+  function initialRoomState(){
+    return {
+      phase: 'setup',          // 'setup' | 'playing' | 'finished'
+      playerCount: 2,
+      players: [],             // [{name, scores:{}}]
+      seatsConfirmed: {},      // {0: true, 1: true, ...} - which seats have been claimed by a device
+      currentPlayer: 0,
+      dice: [1,1,1,1,1],
+      held: [false,false,false,false,false],
+      rollsLeft: 3,
+      rolled: false,
+      gameOver: false,
+      lastMessage: '',
+      updatedAt: Date.now()
+    };
+  }
+
+  // ---------- Room screen ----------
+  function showRoomStatus(text, isError){
+    roomStatus.textContent = text;
+    roomStatus.style.color = isError ? 'var(--red)' : 'var(--blue)';
+  }
+
+  createRoomBtn.addEventListener('click', () => {
+    whenFirebaseReady(() => {
+      fb = window.__fb;
+      roomCode = generateRoomCode();
+      roomRef = fb.ref(fb.db, 'rooms/' + roomCode);
+      const state = initialRoomState();
+      fb.set(roomRef, state).then(() => {
+        isHost = true;
+        mySeat = null; // host picks a seat once names are entered
+        showRoomStatus('Szoba létrehozva! Kód: ' + roomCode);
+        enterLobby();
+      }).catch(err => {
+        showRoomStatus('Hiba a szoba létrehozásakor: ' + err.message, true);
+      });
+    });
+  });
+
+  joinRoomBtn.addEventListener('click', () => {
+    joinForm.style.display = 'block';
+  });
+
+  confirmJoinBtn.addEventListener('click', () => {
+    const code = roomCodeInput.value.trim();
+    if(code.length !== 4 || !/^\d{4}$/.test(code)){
+      showRoomStatus('A kódnak 4 számjegyből kell állnia.', true);
+      return;
+    }
+    whenFirebaseReady(() => {
+      fb = window.__fb;
+      const candidateRef = fb.ref(fb.db, 'rooms/' + code);
+      fb.get(candidateRef).then(snap => {
+        if(!snap.exists()){
+          showRoomStatus('Nincs ilyen kódú szoba. Ellenőrizd, és próbáld újra.', true);
+          return;
+        }
+        roomCode = code;
+        roomRef = candidateRef;
+        isHost = false;
+        mySeat = null;
+        showRoomStatus('Csatlakozva a ' + roomCode + ' szobához!');
+        enterLobby();
+      }).catch(err => {
+        showRoomStatus('Hiba a csatlakozáskor: ' + err.message, true);
+      });
+    });
+  });
+
+  function enterLobby(){
+    roomScreen.style.display = 'none';
+    setupScreen.style.display = 'block';
+    roomCodeDisplay.textContent = '🔑 Szoba kódja: ' + roomCode + ' (osszd meg a többiekkel)';
+    startSyncing();
+  }
+
+  // ---------- Realtime sync ----------
+  function normalizeState(state){
+    // Firebase Realtime Database drops empty objects (like scores:{}) when
+    // writing, so a freshly-created player can come back with `scores`
+    // missing entirely. Normalize so every player always has a scores object.
+    if(state && Array.isArray(state.players)){
+      state.players = state.players.map(p => ({
+        name: (p && p.name) || '',
+        scores: (p && p.scores) || {}
+      }));
+    } else if(state){
+      state.players = [];
+    }
+    if(state && !state.seatsConfirmed){
+      state.seatsConfirmed = {};
+    }
+    return state;
+  }
+
+  function startSyncing(){
+    if(unsubscribe) unsubscribe();
+    unsubscribe = fb.onValue(roomRef, (snap) => {
+      const state = normalizeState(snap.val());
+      if(!state) return;
+      latestState = state;
+      renderFromState(state);
+    });
+  }
+
+  function writeUpdate(partial){
+    if(!roomRef) return;
+    partial.updatedAt = Date.now();
+    fb.update(roomRef, partial);
+  }
+
+  // ---------- Setup screen (player count + names), synced ----------
+  function renderPlayerCountRow(){
+    playerCountRow.innerHTML = '';
+    for(let n=1; n<=4; n++){
+      const btn = document.createElement('button');
+      btn.className = 'count-btn' + (n === playerCount ? ' selected' : '');
+      btn.textContent = n;
+      btn.addEventListener('click', () => {
+        playerCount = n;
+        renderPlayerCountRow();
+        renderNameInputs();
+      });
+      playerCountRow.appendChild(btn);
+    }
+  }
+
+  function renderNameInputs(){
+    const existing = Array.from(nameInputs.querySelectorAll('input')).map(i => i.value);
+    nameInputs.innerHTML = '';
+    for(let i=0; i<playerCount; i++){
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 16;
+      input.placeholder = `${i+1}. játékos (ez a telefon: írd be a saját neved)`;
+      input.value = existing[i] || '';
+      nameInputs.appendChild(input);
+    }
+  }
+
+  startGameBtn.addEventListener('click', () => {
+    const inputs = Array.from(nameInputs.querySelectorAll('input'));
+    const players = inputs.map((inp, i) => ({
+      name: inp.value.trim() || `${i+1}. játékos`,
+      scores: {}
+    }));
+    // Save the names + player count, but stay in 'setup' phase so everyone
+    // (including the host) can pick their seat before the game begins.
+    writeUpdate({
+      phase: 'setup',
+      playerCount: playerCount,
+      players: players,
+      seatsConfirmed: {}
+    });
+  });
+
+  launchGameBtn.addEventListener('click', () => {
+    if(!latestState) return;
+    writeUpdate({
+      phase: 'playing',
+      currentPlayer: 0,
+      dice: [1,1,1,1,1],
+      held: [false,false,false,false,false],
+      rollsLeft: 3,
+      rolled: false,
+      gameOver: false,
+      lastMessage: `Új játék kezdődött! ${latestState.players[0].name} kezd.`
+    });
+  });
+
+  // ---------- Game actions (write to Firebase) ----------
+  function counts(d){
+    const c = [0,0,0,0,0,0,0];
+    d.forEach(v => c[v]++);
+    return c;
+  }
+
+  function calcScore(key, d){
+    const c = counts(d);
+    const sum = d.reduce((a,b)=>a+b,0);
+    switch(key){
+      case 'aces': return c[1]*1;
+      case 'twos': return c[2]*2;
+      case 'threes': return c[3]*3;
+      case 'fours': return c[4]*4;
+      case 'fives': return c[5]*5;
+      case 'sixes': return c[6]*6;
+      case 'choice': return sum;
+      case 'fourkind': {
+        for(let f=1; f<=6; f++){ if(c[f] >= 4) return f*4; }
+        return 0;
+      }
+      case 'fullhouse': {
+        const has3 = c.includes(3);
+        const has2 = c.includes(2);
+        if(has3 && has2) return 25;
+        return 0;
+      }
+      case 'smallstraight': {
+        const set = new Set(d);
+        const seqs = [[1,2,3,4],[2,3,4,5],[3,4,5,6]];
+        for(const seq of seqs){
+          if(seq.every(n => set.has(n))) return 30;
+        }
+        return 0;
+      }
+      case 'largestraight': {
+        const sorted = [...d].sort();
+        const a = JSON.stringify([1,2,3,4,5]);
+        const b = JSON.stringify([2,3,4,5,6]);
+        const s = JSON.stringify(sorted);
+        return (s===a || s===b) ? 40 : 0;
+      }
+      case 'yacht': {
+        return c.some(x => x===5) ? 50 : 0;
+      }
+    }
+    return 0;
+  }
+
+  function isMyTurn(state){
+    return mySeat !== null && state.currentPlayer === mySeat && !state.gameOver;
+  }
+
+  function rollDice(){
+    if(!latestState) return;
+    const state = latestState;
+    if(!isMyTurn(state) || state.rollsLeft <= 0) return;
+
+    const diceEls = diceArea.querySelectorAll('.die');
+    diceEls.forEach((el, i) => { if(!state.held[i]) el.classList.add('rolling'); });
+
+    let ticks = 0;
+    let tempDice = [...state.dice];
+    const interval = setInterval(() => {
+      tempDice = tempDice.map((v,i) => state.held[i] ? v : (1 + Math.floor(Math.random()*6)));
+      renderDiceValuesOnly(tempDice, state.held);
+      ticks++;
+      if(ticks > 6){
+        clearInterval(interval);
+        const finalDice = tempDice.map((v,i) => state.held[i] ? v : (1 + Math.floor(Math.random()*6)));
+        const newRollsLeft = state.rollsLeft - 1;
+        writeUpdate({
+          dice: finalDice,
+          rolled: true,
+          rollsLeft: newRollsLeft,
+          lastMessage: newRollsLeft > 0
+            ? 'Válaszd ki, melyik kockákat tartod meg, majd dobj újra, vagy válassz kategóriát.'
+            : 'Utolsó dobás — válassz kategóriát a táblázatban!'
+        });
+      }
+    }, 60);
+  }
+
+  function toggleHold(i){
+    if(!latestState) return;
+    const state = latestState;
+    if(!isMyTurn(state) || state.rollsLeft === 0 || !state.rolled) return;
+    const held = [...state.held];
+    held[i] = !held[i];
+    writeUpdate({ held });
+  }
+
+  function chooseCategory(key){
+    if(!latestState) return;
+    const state = latestState;
+    if(!isMyTurn(state) || !state.rolled) return;
+    const players = state.players.map(p => ({name:p.name, scores:{...p.scores}}));
+    const player = players[state.currentPlayer];
+    if(player.scores[key] !== undefined) return;
+    const score = calcScore(key, state.dice);
+    player.scores[key] = score;
+
+    const allFilled = players.every(p => CATS.every(c => p.scores[c.key] !== undefined));
+    const catLabel = CATS.find(c=>c.key===key).label;
+
+    if(allFilled){
+      const totals = players.map(p => grandTotalFor(p));
+      const maxScore = Math.max(...totals);
+      const winners = players.filter((p,i) => totals[i] === maxScore);
+      let text;
+      if(winners.length > 1){
+        text = `🤝 Döntetlen! ${winners.map(w=>w.name).join(' és ')} – ${maxScore} pont.`;
+      } else {
+        text = `🏆 ${winners[0].name} nyert ${maxScore} ponttal!`;
+      }
+      writeUpdate({
+        players, gameOver: true, phase: 'finished',
+        lastMessage: `${player.name}: ${catLabel} → ${score} pont! ${text}`
+      });
+    } else {
+      const nextPlayer = (state.currentPlayer + 1) % players.length;
+      writeUpdate({
+        players,
+        currentPlayer: nextPlayer,
+        dice: [1,1,1,1,1],
+        held: [false,false,false,false,false],
+        rollsLeft: 3,
+        rolled: false,
+        lastMessage: `${player.name}: ${catLabel} → ${score} pont! Most ${players[nextPlayer].name} jön.`
+      });
+    }
+  }
+
+  function upperTotalFor(p){
+    return CATS.filter(c=>c.section==='upper').reduce((s,c)=> s + (p.scores[c.key]||0), 0);
+  }
+  function bonusFor(p){
+    return upperTotalFor(p) >= 63 ? 35 : 0;
+  }
+  function lowerTotalFor(p){
+    return CATS.filter(c=>c.section==='lower').reduce((s,c)=> s + (p.scores[c.key]||0), 0);
+  }
+  function grandTotalFor(p){
+    return upperTotalFor(p) + bonusFor(p) + lowerTotalFor(p);
+  }
+
+  function backToSetup(){
+    writeUpdate(Object.assign(initialRoomState(), {playerCount}));
+  }
+
+  // ---------- Rendering from Firebase state ----------
+  function renderDiceValuesOnly(diceVals, heldVals){
+    const diceEls = diceArea.querySelectorAll('.die');
+    diceEls.forEach((el,i) => {
+      const grid = el.querySelector('.pip-grid');
+      if(!grid) return;
+      grid.innerHTML = '';
+      for(let p=0;p<9;p++){
+        const pip = document.createElement('div');
+        pip.className = 'pip' + (PIP_PATTERNS[diceVals[i]].includes(p) ? ' on' : '');
+        grid.appendChild(pip);
+      }
+    });
+  }
+
+  function renderDice(state){
+    diceArea.innerHTML = '';
+    const myTurn = isMyTurn(state);
+    state.dice.forEach((val, i) => {
+      const die = document.createElement('div');
+      die.className = 'die' + (state.held[i] ? ' held' : '');
+      const grid = document.createElement('div');
+      grid.className = 'pip-grid';
+      for(let p=0; p<9; p++){
+        const pip = document.createElement('div');
+        pip.className = 'pip' + (PIP_PATTERNS[val].includes(p) ? ' on' : '');
+        grid.appendChild(pip);
+      }
+      die.appendChild(grid);
+      if(state.rolled && myTurn && !state.gameOver){
+        die.addEventListener('click', () => toggleHold(i));
+      }
+      diceArea.appendChild(die);
+    });
+  }
+
+  function updateControls(state){
+    const myTurn = isMyTurn(state);
+    rollBtn.disabled = !myTurn || state.rollsLeft <= 0 || state.gameOver;
+    rollBtn.textContent = state.rolled ? `🎲 Dobás újra (${state.rollsLeft} maradt)` : '🎲 Dobás';
+    if(!myTurn && !state.gameOver){
+      rollsLeftEl.innerHTML = `Várj — <b>${state.players[state.currentPlayer]?.name || '...'}</b> köre van.`;
+    } else {
+      rollsLeftEl.innerHTML = state.rolled
+        ? `Hátralévő dobások ebben a körben: <b>${state.rollsLeft}</b>`
+        : 'Kattints a Dobás gombra a kör indításához.';
+    }
+  }
+
+  function renderScoreboard(state){
+    scoreboardEl.innerHTML = '';
+    state.players.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.className = 'player-card' + (i === state.currentPlayer && !state.gameOver ? ' active' : '');
+      card.innerHTML = `
+        ${i === state.currentPlayer && !state.gameOver ? '<div class="turn-flag">most ő</div>' : ''}
+        ${i === mySeat ? '<div class="you-flag">te</div>' : ''}
+        <div class="name">${p.name}</div>
+        <div class="total">${grandTotalFor(p)}</div>
+      `;
+      scoreboardEl.appendChild(card);
+    });
+  }
+
+  function updateScoreTable(state){
+    const players = state.players;
+    const table = document.createElement('table');
+    table.className = 'score';
+
+    const thead = document.createElement('thead');
+    const headerCells = players.map(p => `<th>${p.name}</th>`).join('');
+    thead.innerHTML = `<tr><th>Kategória</th>${headerCells}</tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    const myTurn = isMyTurn(state);
+
+    function addRow(cat){
+      const tr = document.createElement('tr');
+      const labelTd = document.createElement('td');
+      labelTd.className = 'label';
+      labelTd.textContent = cat.label;
+      labelTd.title = cat.desc;
+      tr.appendChild(labelTd);
+
+      players.forEach((p, pi) => {
+        const td = document.createElement('td');
+        const filled = p.scores[cat.key] !== undefined;
+        td.className = 'cell' + (filled ? ' filled' : '') + (cat.key==='yacht' ? ' yacht-cell' : '');
+        const canSelect = (!state.gameOver) && myTurn && pi === state.currentPlayer && state.rolled && !filled;
+        if(canSelect){
+          td.classList.add('selectable');
+          td.addEventListener('click', () => chooseCategory(cat.key));
+          td.textContent = '?' + (state.rolled ? ' (' + calcScore(cat.key, state.dice) + ')' : '');
+        } else {
+          td.textContent = filled ? p.scores[cat.key] : '–';
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+
+    CATS.filter(c=>c.section==='upper').forEach(addRow);
+
+    const subRow1 = document.createElement('tr');
+    subRow1.innerHTML = `<td class="section-sub label">Felső összesen</td>` +
+      players.map(p => `<td class="section-sub">${upperTotalFor(p)}</td>`).join('');
+    tbody.appendChild(subRow1);
+
+    const subRow2 = document.createElement('tr');
+    subRow2.innerHTML = `<td class="section-sub label">Bónusz (63+ → 35)</td>` +
+      players.map(p => `<td class="section-sub">${bonusFor(p)}</td>`).join('');
+    tbody.appendChild(subRow2);
+
+    CATS.filter(c=>c.section==='lower').forEach(addRow);
+
+    const subRow3 = document.createElement('tr');
+    subRow3.innerHTML = `<td class="section-sub label">Alsó összesen</td>` +
+      players.map(p => `<td class="section-sub">${lowerTotalFor(p)}</td>`).join('');
+    tbody.appendChild(subRow3);
+
+    const totalRow = document.createElement('tr');
+    totalRow.innerHTML = `<td class="label" style="font-size:1.05rem;">VÉGEREDMÉNY</td>` +
+      players.map(p => `<td style="font-weight:700; font-size:1.1rem;">${grandTotalFor(p)}</td>`).join('');
+    tbody.appendChild(totalRow);
+
+    table.appendChild(tbody);
+    tableWrap.innerHTML = '';
+    tableWrap.appendChild(table);
+  }
+
+  function renderSeatPicker(state){
+    seatPickerRow.innerHTML = '';
+    const confirmed = state.seatsConfirmed || {};
+    state.players.forEach((p, i) => {
+      const taken = confirmed[i] === true;
+      const btn = document.createElement('button');
+      btn.className = 'count-btn' + (i === mySeat ? ' selected' : '');
+      btn.textContent = i + 1;
+      btn.title = p.name + (taken && i !== mySeat ? ' (foglalt)' : '');
+      if(taken && i !== mySeat){
+        btn.disabled = true;
+      }
+      btn.addEventListener('click', () => {
+        // Release any previously claimed seat by this device
+        if(mySeat !== null){
+          writeUpdate({ ['seatsConfirmed/' + mySeat]: null });
+        }
+        mySeat = i;
+        writeUpdate({ ['seatsConfirmed/' + i]: true });
+      });
+      seatPickerRow.appendChild(btn);
+    });
+  }
+
+  function renderFromState(state){
+    if(state.phase === 'setup'){
+      setupScreen.style.display = 'block';
+      gameScreen.style.display = 'none';
+
+      const namesReady = state.players && state.players.length > 0;
+
+      if(isHost && !namesReady){
+        hostNameSetup.style.display = 'block';
+        seatPicker.style.display = 'none';
+        waitingNote.textContent = 'Add meg, hány játékos lesz és a neveiket, majd nyomd meg a "Játék indítása" gombot a folytatáshoz.';
+      } else if(!namesReady){
+        hostNameSetup.style.display = 'none';
+        seatPicker.style.display = 'none';
+        waitingNote.textContent = 'Várj, amíg a szoba létrehozója megadja a játékosok neveit...';
+      } else {
+        hostNameSetup.style.display = 'none';
+        seatPicker.style.display = 'block';
+        renderSeatPicker(state);
+
+        const confirmed = state.seatsConfirmed || {};
+        const allConfirmed = state.players.every((p,i) => confirmed[i] === true);
+
+        if(isHost){
+          launchGameBtn.style.display = allConfirmed ? 'block' : 'none';
+          waitingNote.textContent = allConfirmed
+            ? 'Mindenki kiválasztotta a helyét — indíthatod a játékot!'
+            : 'Válassz egy helyet, és várj, amíg a többiek is csatlakoznak a kóddal és kiválasztják a helyüket.';
+        } else {
+          launchGameBtn.style.display = 'none';
+          waitingNote.textContent = mySeat === null
+            ? 'Válaszd ki fent, melyik játékos vagy te ezen a telefonon.'
+            : 'Készen állsz! Várj, amíg a szoba létrehozója elindítja a játékot.';
+        }
+      }
+      return;
+    }
+
+    setupScreen.style.display = 'none';
+    gameScreen.style.display = 'block';
+    subtitleEl.textContent = `— klasszikus kockajáték, ${state.players.length} játékos —`;
+
+    renderDice(state);
+    updateControls(state);
+    renderScoreboard(state);
+    updateScoreTable(state);
+
+    msgEl.textContent = state.lastMessage || '';
+
+    if(state.gameOver){
+      const totals = state.players.map(p => grandTotalFor(p));
+      const maxScore = Math.max(...totals);
+      const winners = state.players.filter((p,i) => totals[i] === maxScore);
+      const text = winners.length > 1
+        ? `🤝 Döntetlen! ${winners.map(w=>w.name).join(' és ')} – ${maxScore} pont.`
+        : `🏆 ${winners[0].name} nyert ${maxScore} ponttal!`;
+      winnerBanner.innerHTML = `<div class="winner-banner">${text}</div>`;
+    } else {
+      winnerBanner.innerHTML = '';
+    }
+  }
+
+  rollBtn.addEventListener('click', rollDice);
+  newGameBtn.addEventListener('click', backToSetup);
+
+  renderPlayerCountRow();
+  renderNameInputs();
+})();
+</script>
+
+</body>
+</html>
