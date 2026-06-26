@@ -207,6 +207,22 @@
     background:var(--paper-dark);
     color:var(--ink);
   }
+  .quiet-link{
+    display:block;
+    margin:18px auto 0;
+    background:none;
+    border:none;
+    box-shadow:none;
+    color:var(--ink-light);
+    font-size:0.85rem;
+    text-decoration:underline;
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .quiet-link:active{
+    transform:none;
+    box-shadow:none;
+  }
 
   .rolls-left{
     font-size:0.95rem;
@@ -462,13 +478,14 @@
 
   <div class="controls">
     <button id="rollBtn">🎲 Dobás</button>
-    <button id="newGameBtn" class="secondary">⚙ Új játék / beállítások</button>
   </div>
 
   <div class="msg" id="msg"></div>
   <div id="winnerBanner"></div>
 
   <div id="tableWrap"></div>
+
+  <button id="newGameBtn" class="quiet-link">⚙ Új játék / beállítások</button>
 
   <footer>Tipp: kattints egy kockára, hogy "tartsd" — a tartott kockákat nem dobod újra.</footer>
 </div>
@@ -1086,7 +1103,12 @@
   }
 
   rollBtn.addEventListener('click', rollDice);
-  newGameBtn.addEventListener('click', backToSetup);
+  newGameBtn.addEventListener('click', () => {
+    const confirmed = window.confirm('Biztosan kilépsz a jelenlegi játékból, és visszamész a beállításokhoz? A mostani állás elveszik.');
+    if(confirmed){
+      backToSetup();
+    }
+  });
 
   renderPlayerCountRow();
   renderNameInputs();
